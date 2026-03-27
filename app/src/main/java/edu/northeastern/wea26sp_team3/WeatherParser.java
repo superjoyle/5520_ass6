@@ -1,9 +1,6 @@
 package edu.northeastern.wea26sp_team3;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.util.ArrayList;
 
 public class WeatherParser {
 
@@ -15,7 +12,16 @@ public class WeatherParser {
         double temperature = current.getDouble("temperature_2m");
         int weatherCode = current.getInt("weather_code");
         double windSpeed = current.getDouble("wind_speed_10m");
+        double humidity = current.getDouble("relative_humidity_2m");
+        double feelsLike = current.getDouble("apparent_temperature");
 
-        return new WeatherItem(time, temperature, weatherCode, windSpeed);
+        return new WeatherItem(
+                time,
+                temperature,
+                weatherCode,
+                windSpeed,
+                humidity,
+                feelsLike
+        );
     }
 }

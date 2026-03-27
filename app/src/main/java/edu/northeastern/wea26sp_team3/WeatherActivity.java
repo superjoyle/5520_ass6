@@ -26,7 +26,6 @@ public class WeatherActivity extends AppCompatActivity {
     private EditText cityInput;
     private RadioGroup weatherTypeGroup;
     private RadioButton currentWeatherRadio;
-    private ImageView currentWeatherIcon;
     private RadioButton forecastRadio;
     private Switch unitSwitch;
     private Button searchButton;
@@ -34,9 +33,14 @@ public class WeatherActivity extends AppCompatActivity {
     private ProgressBar loadingProgressBar;
 
     private LinearLayout currentWeatherCard;
+    private ImageView currentWeatherIcon;
     private TextView cityNameText;
     private TextView tempText;
     private TextView conditionText;
+    private TextView windText;
+    private TextView humidityText;
+    private TextView feelsLikeText;
+
     private RecyclerView forecastRecyclerView;
 
     private final Handler loadingHandler = new Handler();
@@ -75,7 +79,6 @@ public class WeatherActivity extends AppCompatActivity {
         cityInput = findViewById(R.id.cityInput);
         weatherTypeGroup = findViewById(R.id.weatherTypeGroup);
         currentWeatherRadio = findViewById(R.id.currentWeatherRadio);
-        currentWeatherIcon = findViewById(R.id.currentWeatherIcon);
         forecastRadio = findViewById(R.id.forecastRadio);
         unitSwitch = findViewById(R.id.unitSwitch);
         searchButton = findViewById(R.id.searchButton);
@@ -83,9 +86,13 @@ public class WeatherActivity extends AppCompatActivity {
         loadingProgressBar = findViewById(R.id.loadingProgressBar);
 
         currentWeatherCard = findViewById(R.id.currentWeatherCard);
+        currentWeatherIcon = findViewById(R.id.currentWeatherIcon);
         cityNameText = findViewById(R.id.cityNameText);
         tempText = findViewById(R.id.tempText);
         conditionText = findViewById(R.id.conditionText);
+        windText = findViewById(R.id.windText);
+        humidityText = findViewById(R.id.humidityText);
+        feelsLikeText = findViewById(R.id.feelsLikeText);
 
         forecastRecyclerView = findViewById(R.id.forecastRecyclerView);
     }
@@ -121,9 +128,7 @@ public class WeatherActivity extends AppCompatActivity {
 
                             showForecast(items);
                         } else {
-                            String currentTemp = formatTemperature(currentWeather.temperature);
-                            String condition = mapWeatherCodeToCondition(currentWeather.weatherCode);
-                            showCurrentWeather(cityName, currentTemp, condition);
+                            showCurrentWeather(cityName, currentWeather);
                         }
                     });
                 }
@@ -157,18 +162,26 @@ public class WeatherActivity extends AppCompatActivity {
         searchButton.setEnabled(true);
     }
 
-    private void showCurrentWeather(String city, String temp, String condition) {
+    private void showCurrentWeather(String city, WeatherItem currentWeather) {
         stopLoading();
 
         statusText.setVisibility(View.GONE);
         forecastRecyclerView.setVisibility(View.GONE);
         currentWeatherCard.setVisibility(View.VISIBLE);
 
+        String temp = formatTemperature(currentWeather.temperature);
+        String condition = mapWeatherCodeToCondition(currentWeather.weatherCode);
+        String feelsLike = formatTemperature(currentWeather.feelsLike);
+
         cityNameText.setText(city);
         tempText.setText(temp);
         conditionText.setText(condition);
 
         currentWeatherIcon.setImageResource(getIconForCondition(condition));
+
+        windText.setText(String.format(Locale.US, "Wind: %.1f km/h", currentWeather.windSpeed));
+        humidityText.setText(String.format(Locale.US, "Humidity: %.0f%%", currentWeather.humidity));
+        feelsLikeText.setText("Feels Like: " + feelsLike);
     }
 
     private void showForecast(List<ForecastItem> forecastItems) {
