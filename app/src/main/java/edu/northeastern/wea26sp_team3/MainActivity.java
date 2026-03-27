@@ -7,6 +7,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Switch;
@@ -30,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
     private Switch unitSwitch;
     private Button searchButton;
     private TextView statusText;
+    private ProgressBar loadingProgressBar;
 
     private LinearLayout currentWeatherCard;
     private TextView cityNameText;
@@ -78,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
         unitSwitch = findViewById(R.id.unitSwitch);
         searchButton = findViewById(R.id.searchButton);
         statusText = findViewById(R.id.statusText);
+        loadingProgressBar = findViewById(R.id.loadingProgressBar);
 
         currentWeatherCard = findViewById(R.id.currentWeatherCard);
         cityNameText = findViewById(R.id.cityNameText);
@@ -113,7 +116,6 @@ public class MainActivity extends AppCompatActivity {
                                 String dayText = item.date;
                                 String highLowText = buildHighLowText(item.maxTemp, item.minTemp);
                                 String condition = mapWeatherCodeToCondition(item.weatherCode);
-
                                 items.add(new ForecastItem(dayText, highLowText, condition));
                             }
 
@@ -139,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
         loadingDotCount = 0;
 
         statusText.setVisibility(View.VISIBLE);
+        loadingProgressBar.setVisibility(View.VISIBLE);
         searchButton.setEnabled(false);
 
         currentWeatherCard.setVisibility(View.GONE);
@@ -150,6 +153,7 @@ public class MainActivity extends AppCompatActivity {
     private void stopLoading() {
         isLoading = false;
         loadingHandler.removeCallbacks(loadingRunnable);
+        loadingProgressBar.setVisibility(View.GONE);
         searchButton.setEnabled(true);
     }
 
@@ -202,7 +206,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private int getIconForCondition(String condition) {
-        String lower = condition.toLowerCase();
+        String lower = condition.toLowerCase(Locale.US);
 
         if (lower.contains("rain")) {
             return R.drawable.ic_rain;
