@@ -27,6 +27,7 @@ public class WeatherActivity extends AppCompatActivity {
     private RadioGroup weatherTypeGroup;
     private RadioButton currentWeatherRadio;
     private RadioButton forecastRadio;
+    private RadioButton hourlyForecastRadio;
     private Switch unitSwitch;
     private Button searchButton;
     private TextView statusText;
@@ -80,6 +81,7 @@ public class WeatherActivity extends AppCompatActivity {
         weatherTypeGroup = findViewById(R.id.weatherTypeGroup);
         currentWeatherRadio = findViewById(R.id.currentWeatherRadio);
         forecastRadio = findViewById(R.id.forecastRadio);
+        hourlyForecastRadio = findViewById(R.id.hourlyForecastRadio);
         unitSwitch = findViewById(R.id.unitSwitch);
         searchButton = findViewById(R.id.searchButton);
         statusText = findViewById(R.id.statusText);
@@ -114,19 +116,15 @@ public class WeatherActivity extends AppCompatActivity {
 
             WeatherRepository.fetchWeatherByCity(city, new WeatherCallback() {
                 @Override
-                public void onSuccess(String cityName, WeatherItem currentWeather, ArrayList<DailyWeatherItem> dailyForecast) {
+                public void onSuccess(String cityName,
+                                      WeatherItem currentWeather,
+                                      ArrayList<DailyWeatherItem> dailyForecast,
+                                      ArrayList<HourlyWeatherItem> hourlyForecast) {
                     runOnUiThread(() -> {
                         if (forecastRadio.isChecked()) {
-                            List<ForecastItem> items = new ArrayList<>();
-
-                            for (DailyWeatherItem item : dailyForecast) {
-                                String dayText = item.date;
-                                String highLowText = buildHighLowText(item.maxTemp, item.minTemp);
-                                String condition = mapWeatherCodeToCondition(item.weatherCode);
-                                items.add(new ForecastItem(dayText, highLowText, condition));
-                            }
-
-                            showForecast(items);
+                            showDailyForecast(dailyForecast);
+                        } else if (hourlyForecastRadio.isChecked()) {
+                            showHourlyForecast(hourlyForecast);
                         } else {
                             showCurrentWeather(cityName, currentWeather);
                         }
@@ -184,6 +182,32 @@ public class WeatherActivity extends AppCompatActivity {
         feelsLikeText.setText("Feels Like: " + feelsLike);
     }
 
+    private void showDailyForecast(List<DailyWeatherItem> dailyForecast) {
+        List<ForecastItem> items = new ArrayList<>();
+
+        for (DailyWeatherItem item : dailyForecast) {
+            String dayText = formatDay(item.date);
+            String highLowText = buildHighLowText(item.maxTemp, item.minTemp);
+            String condition = mapWeatherCodeToCondition(item.weatherCode);
+            items.add(new ForecastItem(dayText, highLowText, condition));
+        }
+
+        showForecast(items);
+    }
+
+    private void showHourlyForecast(List<HourlyWeatherItem> hourlyForecast) {
+        List<ForecastItem> items = new ArrayList<>();
+
+        for (HourlyWeatherItem item : hourlyForecast) {
+            String hourText = formatHour(item.time);
+            String tempText = formatTemperature(item.temperature);
+            String condition = mapWeatherCodeToCondition(item.weatherCode);
+            items.add(new ForecastItem(hourText, tempText, condition));
+        }
+
+        showForecast(items);
+    }
+
     private void showForecast(List<ForecastItem> forecastItems) {
         stopLoading();
 
@@ -216,6 +240,27 @@ public class WeatherActivity extends AppCompatActivity {
 
     private String buildHighLowText(double highCelsius, double lowCelsius) {
         return "H: " + formatTemperature(highCelsius) + "  L: " + formatTemperature(lowCelsius);
+    }
+
+    private String formatHour(String isoTime) {
+        if (isoTime == null || !isoTime.contains("T")) {
+            return isoTime;
+        }
+
+        String[] parts = isoTime.split("T");
+        if (parts.length < 2) {
+            return isoTime;
+        }
+
+        String hourPart = parts[1];
+        return hourPart.length() >= 5 ? hourPart.substring(0, 5) : hourPart;
+    }
+
+    private String formatDay(String date) {
+        if (date == null || date.length() < 10) {
+            return date;
+        }
+        return date;
     }
 
     private int getIconForCondition(String condition) {
