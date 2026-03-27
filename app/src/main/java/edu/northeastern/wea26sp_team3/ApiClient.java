@@ -1,5 +1,7 @@
 package edu.northeastern.wea26sp_team3;
 
+import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -19,7 +21,7 @@ public class ApiClient {
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(10000);
             conn.setReadTimeout(10000);
-
+            Log.d("ApiClient", "Requesting: " + urlString);
             int code = conn.getResponseCode();
             InputStream inputStream = (code >= 200 && code < 300)
                     ? conn.getInputStream()
