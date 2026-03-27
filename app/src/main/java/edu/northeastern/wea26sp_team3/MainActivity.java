@@ -27,21 +27,22 @@ public class MainActivity extends AppCompatActivity {
 
             WeatherRepository.fetchWeatherByCity("Boston", new WeatherCallback() {
                 @Override
-                public void onSuccess(String cityName, ArrayList<WeatherItem> items) {
+                public void onSuccess(String cityName, WeatherItem currentWeather, ArrayList<DailyWeatherItem> dailyForecast) {
                     runOnUiThread(() -> {
-                        if (items == null || items.isEmpty()) {
-                            tvResult.setText("Success, but no items returned.");
-                        } else {
-                            WeatherItem first = items.get(0);
-                            String msg = "Success!\n"
-                                    + "City: " + cityName + "\n"
-                                    + "Items: " + items.size() + "\n"
-                                    + "First time: " + first.time + "\n"
-                                    + "Temp: " + first.temperature + "\n"
-                                    + "Code: " + first.weatherCode + "\n"
-                                    + "Wind: " + first.windSpeed;
-                            tvResult.setText(msg);
+                        StringBuilder msg = new StringBuilder();
+                        msg.append("City: ").append(cityName).append("\n");
+                        msg.append("Current Temp: ").append(currentWeather.temperature).append("\n");
+                        msg.append("Forecast count: ").append(dailyForecast.size()).append("\n\n");
+
+                        for (DailyWeatherItem item : dailyForecast) {
+                            msg.append(item.date)
+                                    .append("  Max: ").append(item.maxTemp)
+                                    .append("  Min: ").append(item.minTemp)
+                                    .append("  Code: ").append(item.weatherCode)
+                                    .append("\n");
                         }
+
+                        tvResult.setText(msg.toString());
                     });
                 }
 

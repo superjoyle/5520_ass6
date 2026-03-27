@@ -23,13 +23,20 @@ public class WeatherRepository {
                         + "&longitude="
                         + geo.longitude
                         + "&current=temperature_2m,weather_code,wind_speed_10m"
-                        + "&hourly=temperature_2m,weather_code,wind_speed_10m"
-                        + "&timezone=auto";
+                        + "&daily=weather_code,temperature_2m_max,temperature_2m_min"
+                        + "&timezone=auto"
+                        + "&forecast_days=7";
 
                 String weatherJson = ApiClient.get(weatherUrl);
-                ArrayList<WeatherItem> items = WeatherParser.parseHourly(weatherJson);
 
-                callback.onSuccess(geo.name + (geo.country.isEmpty() ? "" : ", " + geo.country), items);
+                WeatherItem currentWeather = WeatherParser.parseCurrent(weatherJson);
+                ArrayList<DailyWeatherItem> dailyForecast = DailyWeatherParser.parseDaily(weatherJson);
+
+                callback.onSuccess(
+                        geo.name + (geo.country.isEmpty() ? "" : ", " + geo.country),
+                        currentWeather,
+                        dailyForecast
+                );
 
             } catch (Exception e) {
                 callback.onError(e.getMessage());

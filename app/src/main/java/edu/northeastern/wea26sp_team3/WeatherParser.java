@@ -7,27 +7,15 @@ import java.util.ArrayList;
 
 public class WeatherParser {
 
-    public static ArrayList<WeatherItem> parseHourly(String json) throws Exception {
-        ArrayList<WeatherItem> items = new ArrayList<>();
-
+    public static WeatherItem parseCurrent(String json) throws Exception {
         JSONObject root = new JSONObject(json);
-        JSONObject hourly = root.getJSONObject("hourly");
+        JSONObject current = root.getJSONObject("current");
 
-        JSONArray times = hourly.getJSONArray("time");
-        JSONArray temps = hourly.getJSONArray("temperature_2m");
-        JSONArray codes = hourly.getJSONArray("weather_code");
-        JSONArray winds = hourly.getJSONArray("wind_speed_10m");
+        String time = current.getString("time");
+        double temperature = current.getDouble("temperature_2m");
+        int weatherCode = current.getInt("weather_code");
+        double windSpeed = current.getDouble("wind_speed_10m");
 
-        int len = times.length();
-        for (int i = 0; i < len; i++) {
-            String time = times.getString(i);
-            double temp = temps.getDouble(i);
-            int code = codes.getInt(i);
-            double wind = winds.getDouble(i);
-
-            items.add(new WeatherItem(time, temp, code, wind));
-        }
-
-        return items;
+        return new WeatherItem(time, temperature, weatherCode, windSpeed);
     }
 }
