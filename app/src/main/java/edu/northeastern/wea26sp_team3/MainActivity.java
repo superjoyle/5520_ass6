@@ -8,6 +8,9 @@ import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.LinearLayout;
+import android.os.Handler;
+import java.util.ArrayList;
+import java.util.List;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -29,6 +32,25 @@ public class MainActivity extends AppCompatActivity {
     private TextView conditionText;
 
     private RecyclerView forecastRecyclerView;
+
+    private final Handler loadingHandler = new Handler();
+    private int loadingDotCount = 0;
+    private boolean isLoading = false;
+
+    private final Runnable loadingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (!isLoading) return;
+
+            StringBuilder dots = new StringBuilder();
+            for (int i = 0; i < loadingDotCount; i++) {
+                dots.append(".");
+            }
+            statusText.setText("Loading" + dots);
+            loadingDotCount = (loadingDotCount + 1) % 4;
+            loadingHandler.postDelayed(this, 500);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,9 +74,72 @@ public class MainActivity extends AppCompatActivity {
         forecastRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         searchButton.setOnClickListener(v -> {
-            // Networking teammate will connect the API call here.
-            statusText.setVisibility(TextView.VISIBLE);
-            statusText.setText("Ready to search...");
+            String city = cityInput.getText().toString().trim();
+
+            if (city.isEmpty()) {
+                showError("Please enter a city.");
+                return;
+            }
+
+            startLoading();
+
+            // Temporary demo only.
+            // Your networking teammate can replace this block with real API callback results.
+            searchButton.postDelayed(() -> {
+                if (forecastRadio.isChecked()) {
+                    List<ForecastItem> items = new ArrayList<>();
+                    items.add(new ForecastItem("Monday", "H: 72°  L: 56°", "Sunny"));
+                    items.add(new ForecastItem("Tuesday", "H: 68°  L: 54°", "Cloudy"));
+                    items.add(new ForecastItem("Wednesday", "H: 65°  L: 50°", "Rain"));
+                    showForecast(items);
+                } else {
+                    showCurrentWeather(city, "71°F", "Partly Cloudy");
+                }
+            }, 2000);
         });
+    }
+
+    private void startLoading() {
+        isLoading = true;
+        loadingDotCount = 0;
+        statusText.setVisibility(TextView.VISIBLE);
+        searchButton.setEnabled(false);
+        currentWeatherCard.setVisibility(LinearLayout.GONE);
+        forecastRecyclerView.setVisibility(RecyclerView.GONE);
+        loadingHandler.post(loadingRunnable);
+    }
+
+    private void stopLoading() {
+        isLoading = false;
+        loadingHandler.removeCallbacks(loadingRunnable);
+        searchButton.setEnabled(true);
+    }
+
+    private void showCurrentWeather(String city, String temp, String condition) {
+        stopLoading();
+        statusText.setVisibility(TextView.GONE);
+        forecastRecyclerView.setVisibility(RecyclerView.GONE);
+        currentWeatherCard.setVisibility(LinearLayout.VISIBLE);
+
+        cityNameText.setText(city);
+        tempText.setText(temp);
+        conditionText.setText(condition);
+    }
+
+    private void showForecast(List<ForecastItem> forecastItems) {
+        stopLoading();
+        statusText.setVisibility(TextView.GONE);
+        currentWeatherCard.setVisibility(LinearLayout.GONE);
+        forecastRecyclerView.setVisibility(RecyclerView.VISIBLE);
+
+        forecastRecyclerView.setAdapter(new ForecastAdapter(forecastItems));
+    }
+
+    private void showError(String message) {
+        stopLoading();
+        currentWeatherCard.setVisibility(LinearLayout.GONE);
+        forecastRecyclerView.setVisibility(RecyclerView.GONE);
+        statusText.setVisibility(TextView.VISIBLE);
+        statusText.setText(message);
     }
 }
