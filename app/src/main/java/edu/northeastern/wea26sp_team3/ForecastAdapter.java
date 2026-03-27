@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
+import java.util.Locale;
 
 public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.ForecastViewHolder> {
 
@@ -30,17 +31,31 @@ public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.Foreca
     @Override
     public void onBindViewHolder(@NonNull ForecastViewHolder holder, int position) {
         ForecastItem item = items.get(position);
+
         holder.dayText.setText(item.day);
         holder.highLowText.setText(item.highLow);
         holder.conditionText.setText(item.condition);
 
-        // Placeholder icon mapping for now
-        holder.weatherIcon.setImageResource(android.R.drawable.ic_menu_compass);
+        holder.weatherIcon.setImageResource(getIconForCondition(item.condition));
     }
 
     @Override
     public int getItemCount() {
         return items.size();
+    }
+
+    private int getIconForCondition(String condition) {
+        String lower = condition.toLowerCase();
+
+        if (lower.contains("rain")) {
+            return R.drawable.ic_rain;
+        } else if (lower.contains("cloud")) {
+            return R.drawable.ic_cloud;
+        } else if (lower.contains("sun") || lower.contains("clear")) {
+            return R.drawable.ic_sunny;
+        } else {
+            return R.drawable.ic_cloud;
+        }
     }
 
     static class ForecastViewHolder extends RecyclerView.ViewHolder {
@@ -49,7 +64,7 @@ public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.Foreca
         TextView highLowText;
         TextView conditionText;
 
-        ForecastViewHolder(@NonNull View itemView) {
+        public ForecastViewHolder(@NonNull View itemView) {
             super(itemView);
             weatherIcon = itemView.findViewById(R.id.weatherIcon);
             dayText = itemView.findViewById(R.id.dayText);

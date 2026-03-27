@@ -1,8 +1,10 @@
 package edu.northeastern.wea26sp_team3;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Switch;
@@ -11,6 +13,7 @@ import android.widget.LinearLayout;
 import android.os.Handler;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -18,21 +21,22 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class MainActivity extends AppCompatActivity {
 
+    // Input UI
     private EditText cityInput;
     private RadioGroup weatherTypeGroup;
     private RadioButton currentWeatherRadio;
+    private ImageView currentWeatherIcon;
     private RadioButton forecastRadio;
     private Switch unitSwitch;
     private Button searchButton;
     private TextView statusText;
 
+    // Current weather UI
     private LinearLayout currentWeatherCard;
     private TextView cityNameText;
     private TextView tempText;
     private TextView conditionText;
-
     private RecyclerView forecastRecyclerView;
-
     private final Handler loadingHandler = new Handler();
     private int loadingDotCount = 0;
     private boolean isLoading = false;
@@ -40,14 +44,18 @@ public class MainActivity extends AppCompatActivity {
     private final Runnable loadingRunnable = new Runnable() {
         @Override
         public void run() {
-            if (!isLoading) return;
+            if (!isLoading) {
+                return;
+            }
 
             StringBuilder dots = new StringBuilder();
             for (int i = 0; i < loadingDotCount; i++) {
                 dots.append(".");
             }
+
             statusText.setText("Loading" + dots);
             loadingDotCount = (loadingDotCount + 1) % 4;
+
             loadingHandler.postDelayed(this, 500);
         }
     };
@@ -57,9 +65,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        bindViews();
+        setupRecyclerView();
+        setupListeners();
+    }
+
+    private void bindViews() {
         cityInput = findViewById(R.id.cityInput);
         weatherTypeGroup = findViewById(R.id.weatherTypeGroup);
         currentWeatherRadio = findViewById(R.id.currentWeatherRadio);
+        currentWeatherIcon = findViewById(R.id.currentWeatherIcon);
         forecastRadio = findViewById(R.id.forecastRadio);
         unitSwitch = findViewById(R.id.unitSwitch);
         searchButton = findViewById(R.id.searchButton);
@@ -71,8 +86,13 @@ public class MainActivity extends AppCompatActivity {
         conditionText = findViewById(R.id.conditionText);
 
         forecastRecyclerView = findViewById(R.id.forecastRecyclerView);
-        forecastRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+    }
 
+    private void setupRecyclerView() {
+        forecastRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+    }
+
+    private void setupListeners() {
         searchButton.setOnClickListener(v -> {
             String city = cityInput.getText().toString().trim();
 
@@ -83,17 +103,33 @@ public class MainActivity extends AppCompatActivity {
 
             startLoading();
 
-            // Temporary demo only.
-            // Your networking teammate can replace this block with real API callback results.
+            // Demo only for UI testing.
             searchButton.postDelayed(() -> {
                 if (forecastRadio.isChecked()) {
                     List<ForecastItem> items = new ArrayList<>();
-                    items.add(new ForecastItem("Monday", "H: 72°  L: 56°", "Sunny"));
-                    items.add(new ForecastItem("Tuesday", "H: 68°  L: 54°", "Cloudy"));
-                    items.add(new ForecastItem("Wednesday", "H: 65°  L: 50°", "Rain"));
+
+                    items.add(new ForecastItem(
+                            "Monday",
+                            buildHighLowText(22, 13),
+                            "Sunny"
+                    ));
+
+                    items.add(new ForecastItem(
+                            "Tuesday",
+                            buildHighLowText(19, 11),
+                            "Cloudy"
+                    ));
+
+                    items.add(new ForecastItem(
+                            "Wednesday",
+                            buildHighLowText(16, 9),
+                            "Rain"
+                    ));
+
                     showForecast(items);
                 } else {
-                    showCurrentWeather(city, "71°F", "Partly Cloudy");
+                    String currentTemp = formatTemperature(21);
+                    showCurrentWeather(city, currentTemp, "Partly Cloudy");
                 }
             }, 2000);
         });
@@ -102,10 +138,13 @@ public class MainActivity extends AppCompatActivity {
     private void startLoading() {
         isLoading = true;
         loadingDotCount = 0;
-        statusText.setVisibility(TextView.VISIBLE);
+
+        statusText.setVisibility(View.VISIBLE);
         searchButton.setEnabled(false);
-        currentWeatherCard.setVisibility(LinearLayout.GONE);
-        forecastRecyclerView.setVisibility(RecyclerView.GONE);
+
+        currentWeatherCard.setVisibility(View.GONE);
+        forecastRecyclerView.setVisibility(View.GONE);
+
         loadingHandler.post(loadingRunnable);
     }
 
@@ -117,29 +156,69 @@ public class MainActivity extends AppCompatActivity {
 
     private void showCurrentWeather(String city, String temp, String condition) {
         stopLoading();
-        statusText.setVisibility(TextView.GONE);
-        forecastRecyclerView.setVisibility(RecyclerView.GONE);
-        currentWeatherCard.setVisibility(LinearLayout.VISIBLE);
+
+        statusText.setVisibility(View.GONE);
+        forecastRecyclerView.setVisibility(View.GONE);
+        currentWeatherCard.setVisibility(View.VISIBLE);
 
         cityNameText.setText(city);
         tempText.setText(temp);
         conditionText.setText(condition);
+
+        currentWeatherIcon.setImageResource(getIconForCondition(condition));
     }
 
     private void showForecast(List<ForecastItem> forecastItems) {
         stopLoading();
-        statusText.setVisibility(TextView.GONE);
-        currentWeatherCard.setVisibility(LinearLayout.GONE);
-        forecastRecyclerView.setVisibility(RecyclerView.VISIBLE);
 
-        forecastRecyclerView.setAdapter(new ForecastAdapter(forecastItems));
+        statusText.setVisibility(View.GONE);
+        currentWeatherCard.setVisibility(View.GONE);
+        forecastRecyclerView.setVisibility(View.VISIBLE);
+
+        ForecastAdapter adapter = new ForecastAdapter(forecastItems);
+        forecastRecyclerView.setAdapter(adapter);
     }
 
     private void showError(String message) {
         stopLoading();
-        currentWeatherCard.setVisibility(LinearLayout.GONE);
-        forecastRecyclerView.setVisibility(RecyclerView.GONE);
-        statusText.setVisibility(TextView.VISIBLE);
+
+        currentWeatherCard.setVisibility(View.GONE);
+        forecastRecyclerView.setVisibility(View.GONE);
+
+        statusText.setVisibility(View.VISIBLE);
         statusText.setText(message);
+    }
+
+    private String formatTemperature(double celsiusTemp) {
+        if (unitSwitch.isChecked()) {
+            double fahrenheit = (celsiusTemp * 9.0 / 5.0) + 32.0;
+            return String.format(Locale.US, "%.0f°F", fahrenheit);
+        } else {
+            return String.format(Locale.US, "%.0f°C", celsiusTemp);
+        }
+    }
+
+    private String buildHighLowText(double highCelsius, double lowCelsius) {
+        return "H: " + formatTemperature(highCelsius) + "  L: " + formatTemperature(lowCelsius);
+    }
+
+    private int getIconForCondition(String condition) {
+        String lower = condition.toLowerCase();
+
+        if (lower.contains("rain")) {
+            return R.drawable.ic_rain;
+        } else if (lower.contains("cloud")) {
+            return R.drawable.ic_cloud;
+        } else if (lower.contains("sun") || lower.contains("clear")) {
+            return R.drawable.ic_sunny;
+        } else {
+            return R.drawable.ic_cloud;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        loadingHandler.removeCallbacks(loadingRunnable);
     }
 }
