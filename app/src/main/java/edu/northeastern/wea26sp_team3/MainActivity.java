@@ -1,16 +1,17 @@
 package edu.northeastern.wea26sp_team3;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.LinearLayout;
-import android.os.Handler;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -21,7 +22,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class MainActivity extends AppCompatActivity {
 
-    // Input UI
     private EditText cityInput;
     private RadioGroup weatherTypeGroup;
     private RadioButton currentWeatherRadio;
@@ -31,12 +31,12 @@ public class MainActivity extends AppCompatActivity {
     private Button searchButton;
     private TextView statusText;
 
-    // Current weather UI
     private LinearLayout currentWeatherCard;
     private TextView cityNameText;
     private TextView tempText;
     private TextView conditionText;
     private RecyclerView forecastRecyclerView;
+
     private final Handler loadingHandler = new Handler();
     private int loadingDotCount = 0;
     private boolean isLoading = false;
@@ -55,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
 
             statusText.setText("Loading" + dots);
             loadingDotCount = (loadingDotCount + 1) % 4;
-
             loadingHandler.postDelayed(this, 500);
         }
     };
@@ -103,35 +102,35 @@ public class MainActivity extends AppCompatActivity {
 
             startLoading();
 
-            // Demo only for UI testing.
-            searchButton.postDelayed(() -> {
-                if (forecastRadio.isChecked()) {
-                    List<ForecastItem> items = new ArrayList<>();
+            WeatherRepository.fetchWeatherByCity(city, new WeatherCallback() {
+                @Override
+                public void onSuccess(String cityName, WeatherItem currentWeather, ArrayList<DailyWeatherItem> dailyForecast) {
+                    runOnUiThread(() -> {
+                        if (forecastRadio.isChecked()) {
+                            List<ForecastItem> items = new ArrayList<>();
 
-                    items.add(new ForecastItem(
-                            "Monday",
-                            buildHighLowText(22, 13),
-                            "Sunny"
-                    ));
+                            for (DailyWeatherItem item : dailyForecast) {
+                                String dayText = item.date;
+                                String highLowText = buildHighLowText(item.maxTemp, item.minTemp);
+                                String condition = mapWeatherCodeToCondition(item.weatherCode);
 
-                    items.add(new ForecastItem(
-                            "Tuesday",
-                            buildHighLowText(19, 11),
-                            "Cloudy"
-                    ));
+                                items.add(new ForecastItem(dayText, highLowText, condition));
+                            }
 
-                    items.add(new ForecastItem(
-                            "Wednesday",
-                            buildHighLowText(16, 9),
-                            "Rain"
-                    ));
-
-                    showForecast(items);
-                } else {
-                    String currentTemp = formatTemperature(21);
-                    showCurrentWeather(city, currentTemp, "Partly Cloudy");
+                            showForecast(items);
+                        } else {
+                            String currentTemp = formatTemperature(currentWeather.temperature);
+                            String condition = mapWeatherCodeToCondition(currentWeather.weatherCode);
+                            showCurrentWeather(cityName, currentTemp, condition);
+                        }
+                    });
                 }
-            }, 2000);
+
+                @Override
+                public void onError(String errorMessage) {
+                    runOnUiThread(() -> showError("Error: " + errorMessage));
+                }
+            });
         });
     }
 
@@ -211,8 +210,46 @@ public class MainActivity extends AppCompatActivity {
             return R.drawable.ic_cloud;
         } else if (lower.contains("sun") || lower.contains("clear")) {
             return R.drawable.ic_sunny;
+        } else if (lower.contains("snow")) {
+            return R.drawable.ic_cloud;
+        } else if (lower.contains("thunder")) {
+            return R.drawable.ic_rain;
         } else {
             return R.drawable.ic_cloud;
+        }
+    }
+
+    private String mapWeatherCodeToCondition(int weatherCode) {
+        switch (weatherCode) {
+            case 0:
+                return "Sunny";
+            case 1:
+            case 2:
+            case 3:
+            case 45:
+            case 48:
+                return "Cloudy";
+            case 51:
+            case 53:
+            case 55:
+            case 61:
+            case 63:
+            case 65:
+            case 80:
+            case 81:
+            case 82:
+                return "Rain";
+            case 71:
+            case 73:
+            case 75:
+            case 77:
+                return "Snow";
+            case 95:
+            case 96:
+            case 99:
+                return "Thunderstorm";
+            default:
+                return "Cloudy";
         }
     }
 
