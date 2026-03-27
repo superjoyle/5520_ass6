@@ -22,8 +22,8 @@ public class WeatherRepository {
                         + geo.latitude
                         + "&longitude="
                         + geo.longitude
-                        + "&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m,apparent_temperature,surface_pressure"
-                        + "&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset"
+                        + "&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m,apparent_temperature"
+                        + "&daily=weather_code,temperature_2m_max,temperature_2m_min"
                         + "&hourly=temperature_2m,weather_code,wind_speed_10m"
                         + "&timezone=auto"
                         + "&forecast_days=7";
@@ -32,11 +32,13 @@ public class WeatherRepository {
 
                 WeatherItem currentWeather = WeatherParser.parseCurrent(weatherJson);
                 ArrayList<DailyWeatherItem> dailyForecast = DailyWeatherParser.parseDaily(weatherJson);
+                ArrayList<HourlyWeatherItem> hourlyForecast = HourlyWeatherParser.parseHourly(weatherJson);
 
                 callback.onSuccess(
                         geo.name + (geo.country.isEmpty() ? "" : ", " + geo.country),
                         currentWeather,
-                        dailyForecast
+                        dailyForecast,
+                        hourlyForecast
                 );
 
             } catch (Exception e) {
